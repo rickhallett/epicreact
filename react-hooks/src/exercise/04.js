@@ -4,10 +4,10 @@
 import * as React from 'react';
 import {useLocalStorageState} from '../utils';
 
-function Board({squares, selectSquare, status}) {
+function Board({squares, onClick, status}) {
   function renderSquare(i) {
     return (
-      <button className="square" onClick={() => selectSquare(i)}>
+      <button className="square" onClick={() => onClick(i)}>
         {squares[i]}
       </button>
     );
@@ -35,22 +35,25 @@ function Board({squares, selectSquare, status}) {
   );
 }
 
-function History({history, currentStep, selectStep}) {
+function History({history, currentStep, onClick}) {
   return (
     <div className="game-info">
       <ol>
-        {history?.map((step, i) => (
-          <li>
-            <button
-              onClick={() => selectStep(i)}
-              disabled={currentStep === i}
-              style={{minWidth: '200px', padding: '2px'}}
-            >
-              {i > 0 ? `Go to step ${i}` : 'Go to game start'}
-              {currentStep === i && ' (current)'}
-            </button>
-          </li>
-        ))}
+        {history?.map((stepSquares, step) => {
+          const desc = step ? `Go to step ${step}` : 'Go to game start';
+          const isCurrentStep = step === currentStep;
+          return (
+            <li key={step}>
+              <button
+                onClick={() => onClick(step)}
+                disabled={currentStep === step}
+                style={{minWidth: '200px', padding: '2px'}}
+              >
+                {desc} {isCurrentStep ? '(current)' : null}
+              </button>
+            </li>
+          );
+        })}
       </ol>
     </div>
   );
@@ -61,47 +64,30 @@ function App() {
 }
 
 function Game() {
-  const [squares, setSquares] = useLocalStorageState(
-    'tictactoe',
+  const [history, setHistory] = useLocalStorageState('tic:history', [
     Array(9).fill(null),
-  );
+  ]);
+  const [currentStep, setCurrentStep] = useLocalStorageState('tic:step', 0);
 
-  const [history, setHistory] = React.useState([squares]);
-  const [currentStep, setCurrentStep] = React.useState(0);
-
-  const nextValue = calculateNextValue(squares);
-  const winner = calculateWinner(squares);
-  const status = calculateStatus(winner, squares, nextValue);
+  const currentSquares = history[currentStep];
+  const nextValue = calculateNextValue(currentSquares);
+  const winner = calculateWinner(currentSquares);
+  const status = calculateStatus(winner, currentSquares, nextValue);
 
   function selectSquare(square) {
-    if (Boolean(winner)) {
+    if (winner || currentSquares[square]) {
       return;
     }
 
-    if (Boolean(squares[square])) {
-      return;
-    }
+    const newHistory = history.slice(0, currentStep + 1);
+    const squares = [...currentSquares];
 
-    const squaresCopy = [...squares];
-    squaresCopy[square] = nextValue;
-
-    if (currentStep === history.length - 1) {
-      setHistory((state) => [...state, squaresCopy]);
-    } else {
-      setHistory((state) => [...state.slice(0, currentStep + 1), squaresCopy]);
-    }
-
-    setSquares(squaresCopy);
-    setCurrentStep((state) => state + 1);
-  }
-
-  function selectStep(step) {
-    setSquares(history[step]);
-    setCurrentStep(step);
+    squares[square] = nextValue;
+    setHistory([...newHistory, squares]);
+    setCurrentStep(newHistory.length);
   }
 
   function restart() {
-    setSquares(Array(9).fill(null));
     setHistory([Array(9).fill(null)]);
     setCurrentStep(0);
   }
@@ -109,15 +95,20 @@ function Game() {
   return (
     <div className="game">
       <div className="game-board">
-        <Board squares={squares} selectSquare={selectSquare} status={status} />
+        <Board
+          squares={currentSquares}
+          currentStep={currentStep}
+          status={status}
+          onClick={selectSquare}
+        />
         <button className="restart" onClick={restart}>
           restart
         </button>
       </div>
       <History
         history={history}
+        onClick={setCurrentStep}
         currentStep={currentStep}
-        selectStep={selectStep}
       />
     </div>
   );
