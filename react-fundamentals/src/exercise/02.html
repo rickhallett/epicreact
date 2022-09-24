@@ -1,0 +1,36 @@
+<!-- Intro to raw React APIs -->
+<!-- http://localhost:3000/isolated/exercise/02.html -->
+
+<body>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.1.0/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18.1.0/umd/react-dom.development.js"></script>
+
+  <!-- <script type="module">
+    const root = document.getElementById('root');
+
+    const el = React.createElement('div', {
+      id: 'element-id',
+      className: 'container',
+      children: 'Hello world!',
+    });
+
+    ReactDOM.render(el, root);
+  </script> -->
+
+  <script type="module">
+    const root = document.getElementById('root');
+
+    const el = React.createElement('div', {
+      id: 'element-id',
+      className: 'container',
+      children: [
+        React.createElement('span', {children: 'Hello'}),
+        React.createElement('span', {children: 'World'}),
+      ],
+    });
+
+    ReactDOM.render(el, root);
+  </script>
+</body>
